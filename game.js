@@ -267,11 +267,13 @@ function initGame() {
     player = new Cell(startX, startY, CONFIG.INITIAL_PLAYER_RADIUS, playerColor, true, playerName || 'Guest');
     cells = [player];
 
-    // Create bots
+    // Create bots - spawn in a ring around player start position
     bots = [];
     for (let i = 0; i < CONFIG.BOT_COUNT; i++) {
-        const x = Math.random() * worldWidth;
-        const y = Math.random() * worldHeight;
+        const angle = (i / CONFIG.BOT_COUNT) * Math.PI * 2 + Math.random() * 0.5;
+        const dist = 200 + Math.random() * 400; // 200-600 units from center
+        const x = startX + Math.cos(angle) * dist;
+        const y = startY + Math.sin(angle) * dist;
         const radius = CONFIG.BOT_MIN_RADIUS + Math.random() * (CONFIG.BOT_MAX_RADIUS - CONFIG.BOT_MIN_RADIUS);
         const bot = new Cell(x, y, radius, randomColor(), false, BOT_NAMES[i]);
         cells.push(bot);
@@ -406,10 +408,12 @@ function checkCollisions() {
         food.push(new Food());
     }
 
-    // Respawn bots
+    // Respawn bots near player
     while (bots.length < CONFIG.BOT_COUNT) {
-        const x = Math.random() * worldWidth;
-        const y = Math.random() * worldHeight;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 300 + Math.random() * 500;
+        const x = player.x + Math.cos(angle) * dist;
+        const y = player.y + Math.sin(angle) * dist;
         const radius = CONFIG.BOT_MIN_RADIUS + Math.random() * (CONFIG.BOT_MAX_RADIUS - CONFIG.BOT_MIN_RADIUS);
         const bot = new Cell(x, y, radius, randomColor(), false, BOT_NAMES[bots.length % BOT_NAMES.length]);
         cells.push(bot);
