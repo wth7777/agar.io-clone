@@ -182,7 +182,7 @@
         constructor(x, y, radius, color, isPlayer = false, name = '', isBot = false) {
             this.x = x;
             this.y = y;
-            this.radius = radius;
+            this._radius = radius;
             this.mass = Math.round(radius * CONFIG.MASS_TO_RADIUS);
             this.color = color;
             this.isPlayer = isPlayer;
@@ -190,8 +190,6 @@
             this.isBot = isBot;
             this.vx = 0;
             this.vy = 0;
-            this.targetX = x;
-            this.targetY = y;
         }
 
         get radius() { return this._radius; }
@@ -397,57 +395,23 @@
         canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
 
-    function onPointerDown(e) {
-        isPointerDown = true;
-        updateTargetFromEvent(e);
-    }
-
-    function onPointerMove(e) {
-        if (isPointerDown) {
-            updateTargetFromEvent(e);
-        }
-    }
-
-    function onPointerUp(e) {
-        isPointerDown = false;
-    }
-
-    function updateTargetFromEvent(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches?.[0]?.clientX ?? 0);
-        const clientY = e.clientY || (e.touches?.[0]?.clientY ?? 0);
-        
-        // Convert screen coords to world coords
-        targetPos.x = camera.x + (clientX - rect.left) / (canvasWidth / CONFIG.WORLD_SIZE * 0.8); // rough
-        targetPos.y = camera.y + (clientY - rect.top) / (canvasHeight / CONFIG.WORLD_SIZE * 0.8);
-        
-        // More accurate conversion
-        const scale = Math.min(canvasWidth, canvasHeight) / (camera.scale || (Math.min(canvasWidth, canvasHeight) / 800));
-        targetPos.x = camera.x + (clientX - rect.left - canvasWidth / 2) / scale;
-        targetPos.y = camera.y + (clientY - rect.top - canvasHeight / 2) / scale;
-    }
-
-    // Better pointer handling
     function getWorldPosFromEvent(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.clientX || (e.touches?.[0]?.clientX ?? 0);
         const clientY = e.clientY || (e.touches?.[0]?.clientY ?? 0);
         
-        // Calculate scale: world units per screen pixel
-        const scaleX = canvasWidth / CONFIG.WORLD_SIZE;
-        const scaleY = canvasHeight / CONFIG.WORLD_SIZE;
-        
-        // World position = camera + (screenPos - screenCenter) / scale
+        // Get the current camera scale (world units per screen pixel)
+        const scale = getScale();
         const screenCenterX = canvasWidth / 2;
         const screenCenterY = canvasHeight / 2;
         
+        // World position = camera + (screenPos - screenCenter) / scale
         return {
-            x: camera.x + (clientX - rect.left - screenCenterX) / scaleX,
-            y: camera.y + (clientY - rect.top - screenCenterY) / scaleY
+            x: camera.x + (clientX - rect.left - canvasWidth / 2) / scale,
+            y: camera.y + (clientY - rect.top - canvasHeight / 2) / scale
         };
     }
 
-    // Replace the updateTargetFromEvent with better version
     function onPointerDown(e) {
         isPointerDown = true;
         const pos = getWorldPosFromEvent(e);
@@ -461,6 +425,22 @@
             targetPos.x = pos.x;
             targetPos.y = pos.y;
         }
+    }
+
+    function onPointerUp(e) {
+        isPointerDown = false;
+    }
+
+    function setupInput() {
+        // Pointer events (mouse + touch)
+        canvas.addEventListener('pointerdown', onPointerDown, { passive: true });
+        canvas.addEventListener('pointermove', onPointerMove, { passive: true });
+        canvas.addEventListener('pointerup', onPointerUp, { passive: true });
+        canvas.addEventListener('pointerleave', onPointerUp, { passive: true });
+        canvas.addEventListener('pointercancel', onPointerUp, { passive: true });
+        
+        // Prevent context menu
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
 
     // ============ GAME LOOP ============
@@ -660,7 +640,6 @@
         
         // World transform
         ctx.save();
-        ctx.scale(1, 1); // Reset
         ctx.translate(canvasWidth / 2, canvasHeight / 2);
         ctx.scale(scale, scale);
         ctx.translate(-camera.x, -camera.y);
