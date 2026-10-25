@@ -293,14 +293,20 @@ function initGame() {
 
     // Create bots - spawn in a ring around player start position
     bots = [];
+    // Determine which bots are bosses (exactly 2 out of 8 = 25%)
+    const bossIndices = [];
+    while (bossIndices.length < Math.floor(CONFIG.BOT_COUNT / 4)) {
+        const idx = Math.floor(Math.random() * CONFIG.BOT_COUNT);
+        if (!bossIndices.includes(idx)) bossIndices.push(idx);
+    }
+    
     for (let i = 0; i < CONFIG.BOT_COUNT; i++) {
         const angle = (i / CONFIG.BOT_COUNT) * Math.PI * 2 + Math.random() * 0.5;
         const dist = 200 + Math.random() * 400; // 200-600 units from center
         const x = startX + Math.cos(angle) * dist;
         const y = startY + Math.sin(angle) * dist;
         
-        // 1/4 of bots are "bosses" with higher mass (up to 3x)
-        const isBoss = Math.random() < 0.25;
+        const isBoss = bossIndices.includes(i);
         const massMultiplier = isBoss ? 1 + Math.random() * (CONFIG.BOT_MASS_MULTIPLIER_MAX - 1) : 1;
         const radius = CONFIG.INITIAL_PLAYER_RADIUS * massMultiplier;
         
@@ -449,7 +455,7 @@ function checkCollisions() {
         const x = player.x + Math.cos(angle) * dist;
         const y = player.y + Math.sin(angle) * dist;
         
-        // 1/4 of bots are "bosses" with higher mass (up to 3x)
+        // 25% chance to be a boss (maintains ratio over time)
         const isBoss = Math.random() < 0.25;
         const massMultiplier = isBoss ? 1 + Math.random() * (CONFIG.BOT_MASS_MULTIPLIER_MAX - 1) : 1;
         const radius = CONFIG.INITIAL_PLAYER_RADIUS * massMultiplier;
