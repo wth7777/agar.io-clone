@@ -10,8 +10,9 @@ const CONFIG = {
     BOT_COUNT: 8,
     BOT_MIN_RADIUS: 15,
     BOT_MAX_RADIUS: 80,
-    PLAYER_SPEED_BASE: 8,
-    BOT_SPEED_BASE: 5,
+    PLAYER_SPEED_BASE: 150,
+    BOT_SPEED_BASE: 150,
+    BOT_DETECTION_RADIUS: 400, // Distance at which bots detect player
     CAMERA_LERP: 0.15,
 };
 
@@ -111,21 +112,28 @@ class Cell {
         }
 
         // Apply velocity
-        this.x += this.vx * dt * 60;
-        this.y += this.vy * dt * 60;
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
 
         // Clamp to world bounds with margin
         const margin = this.radius;
         this.x = clamp(this.x, margin, worldWidth - margin);
         this.y = clamp(this.y, margin, worldHeight - margin);
 
-        // Slow down larger cells
-        this.maxSpeed = this.isPlayer 
-            ? CONFIG.PLAYER_SPEED_BASE * Math.max(0.3, 1 - this.radius / 300)
-            : CONFIG.BOT_SPEED_BASE * Math.max(0.3, 1 - this.radius / 300);
+        // Agar.io speed formula: speed inversely proportional to sqrt of radius
+        // Smaller cells move faster
+        const baseSpeed = this.isPlayer ? CONFIG.PLAYER_SPEED_BASE : CONFIG.BOT_SPEED_BASE;
+        this.maxSpeed = baseSpeed / Math.sqrt(this.radius / 10);
     }
 
     updateBotAI(dt) {
+        // Check if player is within detection radius
+        const dxToPlayer = player.x - this.x;
+        const dyToPlayer = player.y - this.y;
+        const distToPlayerSq = dxToPlayer * dxToPlayer + dyToPlayer * dyToPlayer;
+        const detectionRadiusSq = CONFIG.BOT_DETECTION_RADIUS * CONFIG.BOT_DETECTION_RADIUS;
+        const playerInRange = distToPlayerSq < detectionRadiusSq;
+
         // Find nearest food
         let nearestFood = null;
         let nearestFoodDist = Infinity;
@@ -152,8 +160,26 @@ class Cell {
         }
 
         // Decide behavior
-        if (nearestThreat && nearestThreatDist < 300 * 300) {
-            // Flee from threat
+        if (playerInRange) {
+            // Player detected! Chase or flee based on relative size
+            const distToPlayer = Math.sqrt(distToPlayerSq);
+            if (distToPlayer > 0) {
+                if (player.radius > this.radius * 1.15) {
+                    // Player is bigger - FLEE
+                    this.vx = (-dxToPlayer / distToPlayer) * this.maxSpeed;
+                    this.vy = (-dyToPlayer / distToPlayer) * this.maxSpeed;
+                } else if (this.radius > player.radius * 1.1) {
+                    // Bot is bigger - CHASE
+                    this.vx = (dxToPlayer / distToPlayer) * this.maxSpeed;
+                    this.vy = (dyToPlayer / distToPlayer) * this.maxSpeed;
+                } else {
+                    // Similar size - avoid
+                    this.vx = (-dxToPlayer / distToPlayer) * this.maxSpeed * 0.5;
+                    this.vy = (-dyToPlayer / distToPlayer) * this.maxSpeed * 0.5;
+                }
+            }
+        } else if (nearestThreat && nearestThreatDist < 300 * 300) {
+            // Flee from other threats
             const dx = this.x - nearestThreat.x;
             const dy = this.y - nearestThreat.y;
             const dist = Math.hypot(dx, dy);
@@ -526,8 +552,8 @@ function initAudio() {
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // Create ambient audio element from file
-        ambientAudio = new Audio('ambient_loop.mp3');
+        // Create ambient audio element from file (new background music)
+        ambientAudio = new Audio('ambient_loop2.wav');
         ambientAudio.loop = true;
         ambientAudio.volume = 0.15; // Low volume for background
         
