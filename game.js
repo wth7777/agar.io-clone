@@ -290,7 +290,13 @@
             const sy = (this.y - camY) * scale;
             const sr = this.radius * scale;
             
-            if (sx + sr < 0 || sx - sr > canvasWidth || sy + sr < 0 || sy - sr > canvasHeight) {
+            // Off-screen check in screen coordinates
+            const screenX = sx + canvasWidth / 2;
+            const screenY = sy + canvasHeight / 2;
+            const screenR = sr;
+            
+            if (screenX + screenR < 0 || screenX - screenR > canvasWidth || 
+                screenY + screenR < 0 || screenY - screenR > canvasHeight) {
                 return; // Off screen
             }
             
@@ -338,7 +344,13 @@
             const sy = (this.y - camY) * scale;
             const sr = this.radius * scale;
             
-            if (sx + sr < 0 || sx - sr > canvasWidth || sy + sr < 0 || sy - sr > canvasHeight) return;
+            // Off-screen check in screen coordinates
+            const screenX = sx + canvasWidth / 2;
+            const screenY = sy + canvasHeight / 2;
+            const screenR = sr;
+            
+            if (screenX + screenR < 0 || screenX - screenR > canvasWidth || 
+                screenY + screenR < 0 || screenY - screenR > canvasHeight) return;
             
             ctx.beginPath();
             ctx.arc(sx, sy, sr, 0, Math.PI * 2);
