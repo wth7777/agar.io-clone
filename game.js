@@ -35,8 +35,7 @@ let playerName = 'Guest';
 let score = 0;
 
 let audioCtx = null;
-let ambientOsc = null;
-let ambientGain = null;
+let ambientAudio = null;
 let isAudioPlaying = false;
 let audioInitialized = false;
 
@@ -524,9 +523,15 @@ function initAudio() {
     if (audioInitialized) return;
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create ambient audio element from file
+        ambientAudio = new Audio('ambient_loop.mp3');
+        ambientAudio.loop = true;
+        ambientAudio.volume = 0.15; // Low volume for background
+        
         audioInitialized = true;
     } catch (e) {
-        console.warn('AudioContext not supported');
+        console.warn('Audio not supported:', e);
     }
 }
 
@@ -537,33 +542,20 @@ function resumeAudio() {
 }
 
 function startAmbient() {
-    if (!audioCtx || isAudioPlaying) return;
+    if (!ambientAudio || isAudioPlaying) return;
     
     resumeAudio();
-
-    // Simple ambient drone
-    ambientOsc = audioCtx.createOscillator();
-    ambientGain = audioCtx.createGain();
     
-    ambientOsc.type = 'sine';
-    ambientOsc.frequency.value = 65; // Low C
-    ambientGain.gain.value = 0.02;
-    
-    ambientOsc.connect(ambientGain);
-    ambientGain.connect(audioCtx.destination);
-    ambientOsc.start();
+    ambientAudio.play().catch(e => {
+        console.warn('Ambient audio play failed:', e);
+    });
     isAudioPlaying = true;
 }
 
 function stopAmbient() {
-    if (ambientOsc) {
-        ambientOsc.stop();
-        ambientOsc.disconnect();
-        ambientOsc = null;
-    }
-    if (ambientGain) {
-        ambientGain.disconnect();
-        ambientGain = null;
+    if (ambientAudio) {
+        ambientAudio.pause();
+        ambientAudio.currentTime = 0;
     }
     isAudioPlaying = false;
 }
