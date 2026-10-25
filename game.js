@@ -29,7 +29,6 @@ let food = [];
 let bots = [];
 
 let cameraX = 0, cameraY = 0;
-let targetX = 0, targetY = 0;
 
 let gameState = 'start-screen';
 let playerName = 'Guest';
@@ -253,8 +252,8 @@ class Food {
 
 // ============ INITIALIZATION ============
 function resizeCanvas() {
-    canvasWidth = window.innerWidth;
-    canvasHeight = window.innerHeight;
+    canvasWidth = window.innerWidth || 800;
+    canvasHeight = window.innerHeight || 600;
     canvas.width = canvasWidth * dpr;
     canvas.height = canvasHeight * dpr;
     canvas.style.width = canvasWidth + 'px';
@@ -297,8 +296,6 @@ function initGame() {
     const scale = getScale();
     cameraX = player.x - canvasWidth / 2 / scale;
     cameraY = player.y - canvasHeight / 2 / scale;
-    targetX = cameraX;
-    targetY = cameraY;
 
     // Clamp camera to world
     clampCamera();
@@ -320,6 +317,8 @@ function clampCamera() {
 }
 
 // ============ CAMERA ============
+let cameraInitialized = false;
+
 function getScale() {
     // Dynamic scale based on player size - zoom out as player grows
     // Keep player at ~25% of screen width
@@ -334,13 +333,21 @@ function updateCamera(dt) {
     if (!player) return;
 
     const scale = getScale();
+    
     // Target camera to center on player
-    targetX = player.x - canvasWidth / 2 / scale;
-    targetY = player.y - canvasHeight / 2 / scale;
+    const targetCamX = player.x - canvasWidth / 2 / scale;
+    const targetCamY = player.y - canvasHeight / 2 / scale;
 
-    // Smooth follow
-    cameraX += (targetX - cameraX) * CONFIG.CAMERA_LERP;
-    cameraY += (targetY - cameraY) * CONFIG.CAMERA_LERP;
+    if (!cameraInitialized) {
+        // Snap camera directly to player on first frame
+        cameraX = targetCamX;
+        cameraY = targetCamY;
+        cameraInitialized = true;
+    } else {
+        // Smooth follow with stronger lerp for responsive feel
+        cameraX += (targetCamX - cameraX) * 0.3;
+        cameraY += (targetCamY - cameraY) * 0.3;
+    }
 
     clampCamera();
 }
@@ -638,6 +645,9 @@ function startGame() {
     playerName = playerNameInput.value.trim() || 'Guest';
     showScreen('game-screen');
     initGame();
+    
+    // Reset camera initialization flag for new game
+    cameraInitialized = false;
     
     // Resume audio on user interaction (required by browsers)
     resumeAudio();
