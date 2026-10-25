@@ -283,7 +283,7 @@ function initGame() {
     // Initialize camera at player position - SNAP immediately
     cameraX = player.x - canvasWidth / 2;
     cameraY = player.y - canvasHeight / 2;
-    cameraInitialized = false; // Will snap on first frame
+    cameraInitialized = true; // Already snapped, no need to snap again
 
     // Clamp camera to world
     clampCamera();
@@ -603,7 +603,7 @@ function startGame() {
     showScreen('game-screen');
     initGame();
     
-    // Reset camera initialization flag for new game
+    // Reset camera so it snaps to player on new game
     cameraInitialized = false;
     
     // Resume audio on user interaction (required by browsers)
