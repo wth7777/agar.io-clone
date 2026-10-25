@@ -290,13 +290,15 @@
             const sy = (this.y - camY) * scale;
             const sr = this.radius * scale;
             
-            // Off-screen check in screen coordinates
-            const screenX = sx + canvasWidth / 2;
-            const screenY = sy + canvasHeight / 2;
-            const screenR = sr;
+            // Off-screen check in world coordinates
+            // Visible world range: [camX - viewW/2, camX + viewW/2]
+            const viewW = canvasWidth / scale;
+            const viewH = canvasHeight / scale;
+            const halfW = viewW / 2;
+            const halfH = viewH / 2;
             
-            if (screenX + screenR < 0 || screenX - screenR > canvasWidth || 
-                screenY + screenR < 0 || screenY - screenR > canvasHeight) {
+            if (this.x + this.radius < camX - halfW || this.x - this.radius > camX + halfW ||
+                this.y + this.radius < camY - halfH || this.y - this.radius > camY + halfH) {
                 return; // Off screen
             }
             
@@ -344,13 +346,14 @@
             const sy = (this.y - camY) * scale;
             const sr = this.radius * scale;
             
-            // Off-screen check in screen coordinates
-            const screenX = sx + canvasWidth / 2;
-            const screenY = sy + canvasHeight / 2;
-            const screenR = sr;
+            // Off-screen check in world coordinates
+            const viewW = canvasWidth / scale;
+            const viewH = canvasHeight / scale;
+            const halfW = viewW / 2;
+            const halfH = viewH / 2;
             
-            if (screenX + screenR < 0 || screenX - screenR > canvasWidth || 
-                screenY + screenR < 0 || screenY - screenR > canvasHeight) return;
+            if (this.x + this.radius < camX - halfW || this.x - this.radius > camX + halfW ||
+                this.y + this.radius < camY - halfH || this.y - this.radius > camY + halfH) return;
             
             ctx.beginPath();
             ctx.arc(sx, sy, sr, 0, Math.PI * 2);
