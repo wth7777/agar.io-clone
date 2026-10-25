@@ -552,11 +552,6 @@ function initAudio() {
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // Create ambient audio element from file (new background music)
-        ambientAudio = new Audio('ambient_loop2.wav');
-        ambientAudio.loop = true;
-        ambientAudio.volume = 0.15; // Low volume for background
-        
         // Create eat sound element from file
         eatAudio = new Audio('eat_sound.wav');
         eatAudio.volume = 0.3;
@@ -567,6 +562,13 @@ function initAudio() {
     }
 }
 
+function createAmbientAudio() {
+    const audio = new Audio('ambient_loop2.wav');
+    audio.loop = true;
+    audio.volume = 0.15;
+    return audio;
+}
+
 function resumeAudio() {
     if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
@@ -574,9 +576,12 @@ function resumeAudio() {
 }
 
 function startAmbient() {
-    if (!ambientAudio || isAudioPlaying) return;
+    if (isAudioPlaying) return;
     
     resumeAudio();
+    
+    // Create fresh audio element each game to avoid state issues
+    ambientAudio = createAmbientAudio();
     
     ambientAudio.play().catch(e => {
         console.warn('Ambient audio play failed:', e);
@@ -588,6 +593,8 @@ function stopAmbient() {
     if (ambientAudio) {
         ambientAudio.pause();
         ambientAudio.currentTime = 0;
+        ambientAudio.src = ''; // Fully release the resource
+        ambientAudio = null;
     }
     isAudioPlaying = false;
 }
