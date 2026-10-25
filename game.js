@@ -8,8 +8,6 @@ const CONFIG = {
     INITIAL_PLAYER_RADIUS: 25,
     FOOD_RADIUS: 8,
     BOT_COUNT: 8,
-    BOT_MIN_RADIUS: 15,
-    BOT_MAX_RADIUS: 80,
     PLAYER_SPEED_BASE: 150,
     BOT_SPEED_BASE: 150,
     BOT_DETECTION_RADIUS: 400, // Distance at which bots detect player
@@ -299,7 +297,7 @@ function initGame() {
         const dist = 200 + Math.random() * 400; // 200-600 units from center
         const x = startX + Math.cos(angle) * dist;
         const y = startY + Math.sin(angle) * dist;
-        const radius = CONFIG.BOT_MIN_RADIUS + Math.random() * (CONFIG.BOT_MAX_RADIUS - CONFIG.BOT_MIN_RADIUS);
+        const radius = CONFIG.INITIAL_PLAYER_RADIUS; // Same starting size as player
         const bot = new Cell(x, y, radius, randomColor(), false, BOT_NAMES[i]);
         cells.push(bot);
         bots.push(bot);
@@ -444,7 +442,7 @@ function checkCollisions() {
         const dist = 300 + Math.random() * 500;
         const x = player.x + Math.cos(angle) * dist;
         const y = player.y + Math.sin(angle) * dist;
-        const radius = CONFIG.BOT_MIN_RADIUS + Math.random() * (CONFIG.BOT_MAX_RADIUS - CONFIG.BOT_MIN_RADIUS);
+        const radius = CONFIG.INITIAL_PLAYER_RADIUS; // Same starting size as player
         const bot = new Cell(x, y, radius, randomColor(), false, BOT_NAMES[bots.length % BOT_NAMES.length]);
         cells.push(bot);
         bots.push(bot);
