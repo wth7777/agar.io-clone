@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Agar.io Clone - Mobile-first browser game">
+    <title>Agar.io Clone</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <div class="screen-content">
+            <h1 class="game-title">Agar.io Clone</h1>
+            <p class="subtitle">Mobile-first browser game</p>
+            <input type="text" id="player-name" placeholder="Enter your name (optional)" maxlength="15" autocomplete="off">
+            <button id="play-btn" class="btn primary">Play as Guest</button>
+            <p class="controls-hint">Drag to move • Eat smaller cells • Avoid bigger ones</p>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <canvas id="game-canvas"></canvas>
+        <div id="hud">
+            <div id="score-display">Mass: <span id="mass-value">10</span></div>
+            <div id="leaderboard">
+                <h4>Leaderboard</h4>
+                <ol id="leaderboard-list"></ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Death Screen -->
+    <div id="death-screen" class="screen">
+        <div class="screen-content">
+            <h2 class="death-title">You were eaten!</h2>
+            <div class="final-stats">
+                <p>Final Mass: <span id="final-mass">0</span></p>
+                <p>Rank: <span id="final-rank">#0</span></p>
+            </div>
+            <button id="play-again-btn" class="btn primary">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="ambient-audio" loop preload="auto"></audio>
+    <audio id="eat-audio" preload="auto"></audio>
+
+    <script src="game.js"></script>
+</body>
+</html>
