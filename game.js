@@ -649,13 +649,13 @@
         
         // Draw food
         for (const f of food) {
-            f.draw(ctx, camera.x, camera.y, 1);
+            f.draw(ctx, camera.x, camera.y, scale);
         }
         
         // Draw cells (bots first, then player on top)
         const sortedCells = [...cells].sort((a, b) => (a.isPlayer ? 1 : 0) - (b.isPlayer ? 1 : 0));
         for (const cell of sortedCells) {
-            cell.draw(ctx, camera.x, camera.y, 1);
+            cell.draw(ctx, camera.x, camera.y, scale);
         }
         
         ctx.restore();
