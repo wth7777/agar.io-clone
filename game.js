@@ -38,9 +38,11 @@ let audioCtx = null;
 let ambientOsc = null;
 let ambientGain = null;
 let isAudioPlaying = false;
+let audioInitialized = false;
 
 let lastTime = 0;
 let animationId = null;
+let cameraInitialized = false;
 
 const startScreen = document.getElementById('start-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -51,7 +53,6 @@ const playAgainBtn = document.getElementById('play-again-btn');
 const finalScoreEl = document.getElementById('final-mass');
 const scoreEl = document.getElementById('mass-value');
 const leaderboardEl = document.getElementById('leaderboard-list');
-const deathLeaderboardEl = document.getElementById('leaderboard-list'); // reuse same list
 
 const BOT_NAMES = ['Bot-1', 'Bot-2', 'Bot-3', 'Bot-4', 'Bot-5', 'Bot-6', 'Bot-7', 'Bot-8'];
 const COLORS = ['#4ecdc4', '#ff6b6b', '#ffe66d', '#95e1d3', '#f38181', '#aa96da', '#fcbad3', '#a8d8ea', '#ffd3b6', '#caffbf'];
@@ -177,19 +178,13 @@ class Cell {
         }
     }
 
-    draw(ctx, camX, camY, scale) {
+    draw(ctx, camX, camY) {
         const sx = this.x - camX;
         const sy = this.y - camY;
         const sr = this.radius;
 
-        // Off-screen check in world coordinates (accounting for scale)
-        const viewW = canvasWidth / scale;
-        const viewH = canvasHeight / scale;
-        const halfW = viewW / 2;
-        const halfH = viewH / 2;
-        
-        if (this.x + this.radius < camX - halfW || this.x - this.radius > camX + halfW ||
-            this.y + this.radius < camY - halfH || this.y - this.radius > camY + halfH) {
+        // Off-screen check in screen coordinates
+        if (sx + sr < 0 || sx - sr > canvasWidth || sy + sr < 0 || sy - sr > canvasHeight) {
             return;
         }
 
@@ -201,18 +196,18 @@ class Cell {
         // Border for player
         if (this.isPlayer) {
             ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 3 / (dpr * scale);
+            ctx.lineWidth = 3 / dpr;
             ctx.stroke();
         }
 
         // Name label
         if ((this.isPlayer || !this.isPlayer) && this.name && this.radius > 15) {
-            ctx.font = `${Math.max(10, 12 / scale)}px sans-serif`;
+            ctx.font = `${Math.max(10, 12)}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.fillStyle = '#fff';
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = 3 / (dpr * scale);
-            const textY = sy + sr + 14 / scale;
+            ctx.lineWidth = 3 / dpr;
+            const textY = sy + sr + 14;
             ctx.strokeText(this.name, sx, textY);
             ctx.fillText(this.name, sx, textY);
         }
@@ -227,19 +222,12 @@ class Food {
         this.color = randomColor();
     }
 
-    draw(ctx, camX, camY, scale) {
+    draw(ctx, camX, camY) {
         const sx = this.x - camX;
         const sy = this.y - camY;
         const sr = this.radius;
 
-        // Off-screen check in world coordinates (accounting for scale)
-        const viewW = canvasWidth / scale;
-        const viewH = canvasHeight / scale;
-        const halfW = viewW / 2;
-        const halfH = viewH / 2;
-        
-        if (this.x + this.radius < camX - halfW || this.x - this.radius > camX + halfW ||
-            this.y + this.radius < camY - halfH || this.y - this.radius > camY + halfH) {
+        if (sx + sr < 0 || sx - sr > canvasWidth || sy + sr < 0 || sy - sr > canvasHeight) {
             return;
         }
 
@@ -292,10 +280,10 @@ function initGame() {
         bots.push(bot);
     }
 
-    // Initialize camera at player position
-    const scale = getScale();
-    cameraX = player.x - canvasWidth / 2 / scale;
-    cameraY = player.y - canvasHeight / 2 / scale;
+    // Initialize camera at player position - SNAP immediately
+    cameraX = player.x - canvasWidth / 2;
+    cameraY = player.y - canvasHeight / 2;
+    cameraInitialized = false; // Will snap on first frame
 
     // Clamp camera to world
     clampCamera();
@@ -304,39 +292,22 @@ function initGame() {
     updateScore();
     updateLeaderboard();
 
-    // Start audio (will be resumed on user interaction in startGame)
+    // Init audio (will be started on user interaction)
     initAudio();
 }
 
 function clampCamera() {
-    const scale = getScale();
-    const viewW = canvasWidth / scale;
-    const viewH = canvasHeight / scale;
-    cameraX = clamp(cameraX, 0, worldWidth - viewW);
-    cameraY = clamp(cameraY, 0, worldHeight - viewH);
+    cameraX = clamp(cameraX, 0, worldWidth - canvasWidth);
+    cameraY = clamp(cameraY, 0, worldHeight - canvasHeight);
 }
 
 // ============ CAMERA ============
-let cameraInitialized = false;
-
-function getScale() {
-    // Dynamic scale based on player size - zoom out as player grows
-    // Keep player at ~25% of screen width
-    if (!player) return Math.min(canvasWidth, canvasHeight) / 800;
-    const targetScreenFraction = 0.25;
-    const desiredScale = (canvasWidth * targetScreenFraction) / (player.radius * 2);
-    const baseScale = Math.min(canvasWidth, canvasHeight) / 800;
-    return Math.max(baseScale, desiredScale);
-}
-
 function updateCamera(dt) {
     if (!player) return;
 
-    const scale = getScale();
-    
     // Target camera to center on player
-    const targetCamX = player.x - canvasWidth / 2 / scale;
-    const targetCamY = player.y - canvasHeight / 2 / scale;
+    const targetCamX = player.x - canvasWidth / 2;
+    const targetCamY = player.y - canvasHeight / 2;
 
     if (!cameraInitialized) {
         // Snap camera directly to player on first frame
@@ -344,9 +315,9 @@ function updateCamera(dt) {
         cameraY = targetCamY;
         cameraInitialized = true;
     } else {
-        // Smooth follow with stronger lerp for responsive feel
-        cameraX += (targetCamX - cameraX) * 0.3;
-        cameraY += (targetCamY - cameraY) * 0.3;
+        // Smooth follow
+        cameraX += (targetCamX - cameraX) * CONFIG.CAMERA_LERP;
+        cameraY += (targetCamY - cameraY) * CONFIG.CAMERA_LERP;
     }
 
     clampCamera();
@@ -482,58 +453,46 @@ function updateLeaderboard() {
 
 // ============ RENDERING ============
 function drawGrid() {
-    const scale = getScale();
     const gridSize = 100;
     const startX = Math.floor(cameraX / gridSize) * gridSize;
     const startY = Math.floor(cameraY / gridSize) * gridSize;
-    const viewW = canvasWidth / scale;
-    const viewH = canvasHeight / scale;
-    const endX = cameraX + viewW + gridSize;
-    const endY = cameraY + viewH + gridSize;
+    const endX = startX + canvasWidth + gridSize;
+    const endY = startY + canvasHeight + gridSize;
 
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-    ctx.lineWidth = 1 / (dpr * scale);
+    ctx.lineWidth = 1 / dpr;
 
     ctx.beginPath();
     for (let x = startX; x <= endX; x += gridSize) {
-        ctx.moveTo(x, startY);
-        ctx.lineTo(x, endY);
+        const sx = x - cameraX;
+        ctx.moveTo(sx, 0);
+        ctx.lineTo(sx, canvasHeight);
     }
     for (let y = startY; y <= endY; y += gridSize) {
-        ctx.moveTo(startX, y);
-        ctx.lineTo(endX, y);
+        const sy = y - cameraY;
+        ctx.moveTo(0, sy);
+        ctx.lineTo(canvasWidth, sy);
     }
     ctx.stroke();
 }
 
 function render() {
-    const scale = getScale();
-    
     // Clear
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    // World transform - translate to center, scale, then translate to camera
-    ctx.save();
-    ctx.translate(canvasWidth / 2, canvasHeight / 2);
-    ctx.scale(scale, scale);
-    ctx.translate(-cameraX, -cameraY);
-    
+
     // Draw grid
     drawGrid();
-    
+
     // Draw food
     for (const f of food) {
-        f.draw(ctx, cameraX, cameraY, scale);
+        f.draw(ctx, cameraX, cameraY);
     }
-    
+
     // Draw cells (bots first, then player on top)
     const sortedCells = [...cells].sort((a, b) => (a.isPlayer ? 1 : 0) - (b.isPlayer ? 1 : 0));
     for (const cell of sortedCells) {
-        cell.draw(ctx, cameraX, cameraY, scale);
+        cell.draw(ctx, cameraX, cameraY);
     }
-    
-    ctx.restore();
 }
 
 // ============ GAME LOOP ============
@@ -561,8 +520,6 @@ function gameLoop(timestamp) {
 }
 
 // ============ AUDIO ============
-let audioInitialized = false;
-
 function initAudio() {
     if (audioInitialized) return;
     try {
@@ -688,14 +645,11 @@ function getWorldPosFromEvent(e) {
 
     const canvasX = clientX - rect.left;
     const canvasY = clientY - rect.top;
-    const scale = getScale();
 
-    // Convert screen position to world position (inverse of render transform)
-    // Screen center is at (canvasWidth/2, canvasHeight/2) in screen coords
-    // World position = camera + (screenPos - screenCenter) / scale
+    // Convert screen position to world position (simple pan camera, no zoom)
     return {
-        x: cameraX + (canvasX - canvasWidth / 2) / scale,
-        y: cameraY + (canvasY - canvasHeight / 2) / scale
+        x: cameraX + canvasX,
+        y: cameraY + canvasY
     };
 }
 
