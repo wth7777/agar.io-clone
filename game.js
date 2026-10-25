@@ -574,7 +574,7 @@ function initAudio() {
 function createAmbientAudio() {
     const audio = new Audio('ambient_loop2.wav');
     audio.loop = true;
-    audio.volume = 0.15;
+    audio.volume = 0.08; // Lower volume for background
     return audio;
 }
 
