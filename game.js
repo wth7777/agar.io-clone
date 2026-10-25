@@ -638,7 +638,7 @@
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         
-        // World transform
+        // World transform - translate to center, scale, then translate to camera
         ctx.save();
         ctx.translate(canvasWidth / 2, canvasHeight / 2);
         ctx.scale(scale, scale);
@@ -649,13 +649,13 @@
         
         // Draw food
         for (const f of food) {
-            f.draw(ctx, camera.x, camera.y, scale);
+            f.draw(ctx, camera.x, camera.y, 1);
         }
         
         // Draw cells (bots first, then player on top)
         const sortedCells = [...cells].sort((a, b) => (a.isPlayer ? 1 : 0) - (b.isPlayer ? 1 : 0));
         for (const cell of sortedCells) {
-            cell.draw(ctx, camera.x, camera.y, scale);
+            cell.draw(ctx, camera.x, camera.y, 1);
         }
         
         ctx.restore();
