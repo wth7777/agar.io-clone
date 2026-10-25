@@ -576,6 +576,15 @@ function resumeAudio() {
 function startAmbient() {
     if (isAudioPlaying) return;
     
+    // Double-check: if there's somehow still an audio element, kill it
+    if (ambientAudio) {
+        try {
+            ambientAudio.pause();
+            ambientAudio.src = '';
+        } catch (e) {}
+        ambientAudio = null;
+    }
+    
     resumeAudio();
     
     // Create fresh audio element each game to avoid state issues
@@ -620,6 +629,10 @@ function showScreen(screenName) {
 
 function startGame() {
     playerName = playerNameInput.value.trim() || 'Guest';
+    
+    // Ensure any existing ambient audio is fully stopped before starting new game
+    stopAmbient();
+    
     showScreen('game-screen');
     initGame();
     
