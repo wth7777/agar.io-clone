@@ -49,10 +49,10 @@ const deathScreen = document.getElementById('death-screen');
 const playerNameInput = document.getElementById('player-name');
 const playBtn = document.getElementById('play-btn');
 const playAgainBtn = document.getElementById('play-again-btn');
-const finalScoreEl = document.getElementById('final-score');
-const scoreEl = document.getElementById('score');
-const leaderboardEl = document.getElementById('leaderboard');
-const deathLeaderboardEl = document.getElementById('death-leaderboard');
+const finalScoreEl = document.getElementById('final-mass');
+const scoreEl = document.getElementById('mass-value');
+const leaderboardEl = document.getElementById('leaderboard-list');
+const deathLeaderboardEl = document.getElementById('leaderboard-list'); // reuse same list
 
 const BOT_NAMES = ['Bot-1', 'Bot-2', 'Bot-3', 'Bot-4', 'Bot-5', 'Bot-6', 'Bot-7', 'Bot-8'];
 const COLORS = ['#4ecdc4', '#ff6b6b', '#ffe66d', '#95e1d3', '#f38181', '#aa96da', '#fcbad3', '#a8d8ea', '#ffd3b6', '#caffbf'];
@@ -432,18 +432,13 @@ function updateLeaderboard() {
     const top5 = allCells.slice(0, 5);
     
     leaderboardEl.innerHTML = '';
-    deathLeaderboardEl.innerHTML = '';
     
     top5.forEach((cell, i) => {
-        const div = document.createElement('div');
-        div.className = 'leaderboard-entry';
+        const li = document.createElement('li');
         const isPlayer = cell.isPlayer ? ' (You)' : '';
-        div.innerHTML = `<span>${i + 1}. ${cell.name}${isPlayer}</span><span>${Math.floor(cell.mass)}</span>`;
-        if (cell.isPlayer) div.style.color = '#4ecdc4';
-        leaderboardEl.appendChild(div);
-        
-        const div2 = div.cloneNode(true);
-        deathLeaderboardEl.appendChild(div2);
+        li.innerHTML = `<span>${i + 1}. ${cell.name}${isPlayer}</span><span>${Math.floor(cell.mass)}</span>`;
+        if (cell.isPlayer) li.style.color = '#4ecdc4';
+        leaderboardEl.appendChild(li);
     });
 }
 
@@ -604,7 +599,7 @@ function gameOver() {
         cancelAnimationFrame(animationId);
         animationId = null;
     }
-    finalScoreEl.textContent = `Final Mass: ${score}`;
+    finalScoreEl.textContent = score;
     showScreen('death-screen');
 }
 
