@@ -519,6 +519,8 @@ function gameLoop(timestamp) {
 }
 
 // ============ AUDIO ============
+let eatAudio = null;
+
 function initAudio() {
     if (audioInitialized) return;
     try {
@@ -528,6 +530,10 @@ function initAudio() {
         ambientAudio = new Audio('ambient_loop.mp3');
         ambientAudio.loop = true;
         ambientAudio.volume = 0.15; // Low volume for background
+        
+        // Create eat sound element from file
+        eatAudio = new Audio('eat_sound.wav');
+        eatAudio.volume = 0.3;
         
         audioInitialized = true;
     } catch (e) {
@@ -561,23 +567,14 @@ function stopAmbient() {
 }
 
 function playEatSound() {
-    if (!audioCtx) return;
-    resumeAudio();
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    if (!eatAudio) return;
     
-    osc.type = 'sine';
-    osc.frequency.value = 800;
-    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
-    
-    gain.gain.value = 0.05;
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.2);
+    // Clone to allow overlapping sounds
+    const eatClone = eatAudio.cloneNode();
+    eatClone.volume = 0.3;
+    eatClone.play().catch(e => {
+        console.warn('Eat sound play failed:', e);
+    });
 }
 
 // ============ SCREEN MANAGEMENT ============
