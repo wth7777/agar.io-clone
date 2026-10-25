@@ -11,6 +11,7 @@ const CONFIG = {
     PLAYER_SPEED_BASE: 150,
     BOT_SPEED_BASE: 150,
     BOT_DETECTION_RADIUS: 400, // Distance at which bots detect player
+    BOT_MASS_MULTIPLIER_MAX: 3, // Max mass multiplier for "boss" bots (1/4 of bots)
     CAMERA_LERP: 0.15,
 };
 
@@ -297,7 +298,12 @@ function initGame() {
         const dist = 200 + Math.random() * 400; // 200-600 units from center
         const x = startX + Math.cos(angle) * dist;
         const y = startY + Math.sin(angle) * dist;
-        const radius = CONFIG.INITIAL_PLAYER_RADIUS; // Same starting size as player
+        
+        // 1/4 of bots are "bosses" with higher mass (up to 3x)
+        const isBoss = Math.random() < 0.25;
+        const massMultiplier = isBoss ? 1 + Math.random() * (CONFIG.BOT_MASS_MULTIPLIER_MAX - 1) : 1;
+        const radius = CONFIG.INITIAL_PLAYER_RADIUS * massMultiplier;
+        
         const bot = new Cell(x, y, radius, randomColor(), false, BOT_NAMES[i]);
         cells.push(bot);
         bots.push(bot);
@@ -442,7 +448,12 @@ function checkCollisions() {
         const dist = 300 + Math.random() * 500;
         const x = player.x + Math.cos(angle) * dist;
         const y = player.y + Math.sin(angle) * dist;
-        const radius = CONFIG.INITIAL_PLAYER_RADIUS; // Same starting size as player
+        
+        // 1/4 of bots are "bosses" with higher mass (up to 3x)
+        const isBoss = Math.random() < 0.25;
+        const massMultiplier = isBoss ? 1 + Math.random() * (CONFIG.BOT_MASS_MULTIPLIER_MAX - 1) : 1;
+        const radius = CONFIG.INITIAL_PLAYER_RADIUS * massMultiplier;
+        
         const bot = new Cell(x, y, radius, randomColor(), false, BOT_NAMES[bots.length % BOT_NAMES.length]);
         cells.push(bot);
         bots.push(bot);
